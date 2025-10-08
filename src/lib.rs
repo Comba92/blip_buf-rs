@@ -111,39 +111,26 @@ impl BlipBuf {
         let time = clock_time as fixed_t;
         let fixed = ((time * self.factor + self.offset) >> PRE_SHIFT) as usize;
         let out_index = self.avail + (fixed >> FRAC_BITS);
-        let phase_shift = FRAC_BITS - PHASE_BITS;
-        let phase = fixed >> phase_shift & (PHASE_COUNT - 1);
-        let mut index = BL_STEP[phase];
-        let next = BL_STEP[phase + 1];
-        let rev = BL_STEP[PHASE_COUNT - phase];
-        let prev = BL_STEP[PHASE_COUNT - phase - 1];
-        let interp = (fixed >> (phase_shift - DELTA_BITS) & (DELTA_UNIT - 1)) as i32;
+        
+        const PHASE_SHIFT: usize = FRAC_BITS - PHASE_BITS;
+        let phase = fixed >> PHASE_SHIFT & (PHASE_COUNT - 1);
+        let phase_rev = PHASE_COUNT - phase;
+        
+        let interp = (fixed >> (PHASE_SHIFT - DELTA_BITS) & (DELTA_UNIT - 1)) as i32;
         let delta2 = (delta * interp) >> DELTA_BITS;
-        let delta = delta - delta2;
+        let delta1 = delta - delta2;
 
         assert!(
             out_index <= self.samples.len() + END_FRAME_EXTRA,
             "buffer size was exceeded"
         );
 
-        self.samples[out_index + 0] += index[0] as i32 * delta + next[0] as i32 * delta2;
-        self.samples[out_index + 1] += index[1] as i32 * delta + next[1] as i32 * delta2;
-        self.samples[out_index + 2] += index[2] as i32 * delta + next[2] as i32 * delta2;
-        self.samples[out_index + 3] += index[3] as i32 * delta + next[3] as i32 * delta2;
-        self.samples[out_index + 4] += index[4] as i32 * delta + next[4] as i32 * delta2;
-        self.samples[out_index + 5] += index[5] as i32 * delta + next[5] as i32 * delta2;
-        self.samples[out_index + 6] += index[6] as i32 * delta + next[6] as i32 * delta2;
-        self.samples[out_index + 7] += index[7] as i32 * delta + next[7] as i32 * delta2;
-
-        index = rev;
-        self.samples[out_index + 8] += index[7] as i32 * delta + prev[7] as i32 * delta2;
-        self.samples[out_index + 9] += index[6] as i32 * delta + prev[6] as i32 * delta2;
-        self.samples[out_index + 10] += index[5] as i32 * delta + prev[5] as i32 * delta2;
-        self.samples[out_index + 11] += index[4] as i32 * delta + prev[4] as i32 * delta2;
-        self.samples[out_index + 12] += index[3] as i32 * delta + prev[3] as i32 * delta2;
-        self.samples[out_index + 13] += index[2] as i32 * delta + prev[2] as i32 * delta2;
-        self.samples[out_index + 14] += index[1] as i32 * delta + prev[1] as i32 * delta2;
-        self.samples[out_index + 15] += index[0] as i32 * delta + prev[0] as i32 * delta2;
+        for i in 0..8 {
+            self.samples[out_index + i] += BL_STEP[phase][i]*delta1 + BL_STEP[phase+1][i]*delta2;
+        }
+        for i in 0..8 {
+            self.samples[out_index + 8 + i] += BL_STEP[phase_rev][7-i]*delta1 + BL_STEP[phase_rev-1][7-i] * delta2;
+        }
     }
 
     /// Same as `add_delta()`, but uses faster, lower-quality synthesis.
@@ -171,9 +158,7 @@ impl BlipBuf {
         assert!(self.avail + sample_count as usize <= self.samples.len()); // TODO
 
         let needed = sample_count as fixed_t * TIME_UNIT;
-        if needed < self.offset {
-            return 0;
-        }
+        if needed < self.offset { return 0; }
 
         ((needed - self.offset + self.factor - 1) / self.factor) as u32
     }
@@ -275,7 +260,7 @@ mod test {
     }
 }
 
-const BL_STEP: &[[i16; 8]] = &[
+const BL_STEP: &[[i32; 8]] = &[
     [43, -115, 350, -488, 1136, -914, 5861, 21022],
     [44, -118, 348, -473, 1076, -799, 5274, 21001],
     [45, -121, 344, -454, 1011, -677, 4706, 20936],
