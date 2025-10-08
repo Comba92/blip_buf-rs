@@ -66,9 +66,10 @@ impl BlipBuf {
     /// buffer, or panics if insufficient memory.
     pub fn new(sample_count: u32) -> Self {
         let sample_count = sample_count as usize;
+        const FACTOR: u64 = TIME_UNIT / MAX_RATIO;
         Self {
-            factor: TIME_UNIT / MAX_RATIO,
-            offset: 0,
+            factor: FACTOR,
+            offset: FACTOR / 2,
             integrator: 0,
             avail: 0,
             samples: vec![0; sample_count + BUF_EXTRA],
