@@ -4,11 +4,11 @@ use std::time::Duration;
 use blip_buf::BlipBuf;
 
 const CLOCK_RATE : f64 = 1000000.0;
-const SAMPLE_RATE : u32 = 48000;
+const SAMPLE_RATE : usize = 48000;
 
 fn main() {
     let mut blip = BlipBuf::new(SAMPLE_RATE / 10);
-    blip.set_rates(CLOCK_RATE, SAMPLE_RATE as f64 );
+    blip.set_rates(CLOCK_RATE, SAMPLE_RATE as f64);
 
     let mut time  = 0;      // number of clocks until next wave delta
     let mut delta = 10000;  // amplitude of next delta
@@ -23,14 +23,14 @@ fn main() {
         let clocks = CLOCK_RATE as i32 / 60;
         while time < clocks
         {
-            blip.add_delta( time as u32, delta );
+            blip.add_delta( time as usize, delta );
             delta = -delta; // square wave deltas alternate sign
             time = time + period;
         }
 
         // Add those clocks to buffer and adjust time for next frame
         time = time - clocks;
-        blip.end_frame( clocks as u32 );
+        blip.end_frame( clocks as usize );
 
         // Read and play any output samples now available
         while blip.samples_avail() > 0

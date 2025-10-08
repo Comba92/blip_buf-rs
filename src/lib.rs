@@ -129,7 +129,7 @@ impl BlipBuf {
             self.samples[out_index + i] += BL_STEP[phase][i]*delta1 + BL_STEP[phase+1][i]*delta2;
         }
         for i in 0..8 {
-            self.samples[out_index + 8 + i] += BL_STEP[phase_rev][7-i]*delta1 + BL_STEP[phase_rev-1][7-i] * delta2;
+            self.samples[out_index + 8 + i] += BL_STEP[phase_rev][7-i]*delta1 + BL_STEP[phase_rev-1][7-i]*delta2;
         }
     }
 
