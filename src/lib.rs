@@ -64,17 +64,15 @@ impl BlipBuf {
     /// Creates new buffer that can hold at most sample_count samples. Sets rates
     /// so that there are `MAX_RATIO` clocks per sample. Returns pointer to new
     /// buffer, or panics if insufficient memory.
-    pub fn new(sample_count: u32) -> BlipBuf {
+    pub fn new(sample_count: u32) -> Self {
         let sample_count = sample_count as usize;
-        let mut blip = BlipBuf {
+        Self {
             factor: TIME_UNIT / MAX_RATIO,
             offset: 0,
             integrator: 0,
             avail: 0,
             samples: vec![0; sample_count + BUF_EXTRA],
-        };
-        blip.clear();
-        blip
+        }
     }
 
     /// Sets approximate input clock rate and output sample rate. For every
