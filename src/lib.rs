@@ -111,7 +111,7 @@ impl BlipBuf {
     pub fn add_delta(&mut self, clock_time: usize, delta: i32) -> Result<(), &'static str> {
         let fixed = ((clock_time * self.factor + self.offset) >> PRE_SHIFT) as usize;
         let out_index = self.avail + (fixed >> FRAC_BITS);
-        if out_index + 16 > self.samples.len() + END_FRAME_EXTRA {
+        if out_index + 16 > self.samples.len() {
             return Err("buffer size was exceeded")
         }
 
