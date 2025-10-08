@@ -78,6 +78,7 @@ impl BlipBuf {
 
     /// Sets approximate input clock rate and output sample rate. For every
     /// `clock_rate` input clocks, approximately `sample_rate` samples are generated.
+    /// Returns an error if clock_rate exceeds maximum, relative to sample_rate (the ratio sample_rate / clock_rate isn't between 0 and 1)
     pub fn set_rates(&mut self, clock_rate: f64, sample_rate: f64) -> Result<(), &'static str> {
         let factor: f64 = (TIME_UNIT as f64) * sample_rate / clock_rate;
         self.factor = factor as fixed_t;
@@ -108,6 +109,7 @@ impl BlipBuf {
     }
 
     /// Adds positive/negative delta into buffer at specified clock time.
+    /// Returns an error if clock_time exceeds the buffer's capacity
     pub fn add_delta(&mut self, clock_time: usize, delta: i32) -> Result<(), &'static str> {
         let fixed = ((clock_time * self.factor + self.offset) >> PRE_SHIFT) as usize;
         let out_index = self.avail + (fixed >> FRAC_BITS);
@@ -134,6 +136,7 @@ impl BlipBuf {
     }
 
     /// Same as `add_delta()`, but uses faster, lower-quality synthesis.
+    /// Returns an error if clock_time exceeds the buffer's capacity
     pub fn add_delta_fast(&mut self, clock_time: usize, delta: i32) -> Result<(), &'static str> {
         let fixed = ((clock_time * self.factor + self.offset) >> PRE_SHIFT) as usize;
 
@@ -153,6 +156,7 @@ impl BlipBuf {
 
     /// Length of time frame, in clocks, needed to make `sample_count` additional
     /// samples available.
+    /// Returns an error if sample_count exceeds the buffer's capacity
     pub fn clocks_needed(&self, sample_count: usize) -> Result<usize, &'static str> {
         /* Fails if buffer can't hold that many more samples */
         if self.avail + sample_count as usize > self.samples.len() { return Err("can't hold that many more samples") }
@@ -169,6 +173,7 @@ impl BlipBuf {
     /// the new time frame specifies the same clock as `clock_duration` in the old time
     /// frame specified. Deltas can have been added slightly past `clock_duration` (up to
     /// however many clocks there are in two output samples).
+    /// Returns an error if clock_duration exceeds the buffer's capacity
     pub fn end_frame(&mut self, clock_duration: usize) -> Result<(), &'static str> {
         let off = clock_duration * self.factor + self.offset;
         let avail = self.avail + (off >> TIME_BITS);
