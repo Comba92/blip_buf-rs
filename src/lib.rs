@@ -60,10 +60,6 @@ pub struct BlipBuf {
 
 unsafe impl Send for BlipBuf {}
 
-const MAX_SAMPLE: i32 = 32767;
-const MIN_SAMPLE: i32 = -32768;
-
-
 impl BlipBuf {
     /// Creates new buffer that can hold at most sample_count samples. Sets rates
     /// so that there are `MAX_RATIO` clocks per sample. Returns pointer to new
@@ -234,7 +230,7 @@ impl BlipBuf {
             let mut sum = self.integrator;
             let mut out_index = 0;
             while in_index < end {
-                let s = clamp(sum >> DELTA_BITS);
+                let s = clamp_to_i16(sum >> DELTA_BITS);
                 sum += self.samples[in_index];
                 in_index += 1;
                 buf[out_index] = s as i16;
@@ -249,8 +245,8 @@ impl BlipBuf {
 }
 
 #[inline]
-fn clamp(n: i32) -> i32 {
-    n.clamp(MIN_SAMPLE, MAX_SAMPLE)
+fn clamp_to_i16(n: i32) -> i32 {
+    n.clamp(i16::MIN.into(), i16::MAX.into())
 }
 
 #[cfg(test)]
@@ -268,15 +264,17 @@ mod test {
     fn check_assumptions() {
         use super::*;
 
+        const MAX_SAMPLE: i32 = i16::MAX as i32;
+        const MIN_SAMPLE: i32 = i16::MIN as i32;
         let mut n: i32;
 
         assert!((-3 >> 1) == -2); /* right shift must preserve sign */
         n = MAX_SAMPLE * 2;
-        n = clamp(n);
+        n = clamp_to_i16(n);
         assert!(n == MAX_SAMPLE);
 
         n = MIN_SAMPLE * 2;
-        n = clamp(n);
+        n = clamp_to_i16(n);
         assert!(n == MIN_SAMPLE);
 
         assert!(MAX_RATIO as fixed_t <= TIME_UNIT);
