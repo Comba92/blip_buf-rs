@@ -81,10 +81,10 @@ impl BlipBuf {
     /// Returns an error if clock_rate exceeds maximum, relative to sample_rate (the ratio sample_rate / clock_rate isn't between 0 and 1)
     pub fn set_rates(&mut self, clock_rate: f64, sample_rate: f64) -> Result<(), &'static str> {
         let factor: f64 = (TIME_UNIT as f64) * sample_rate / clock_rate;
-        self.factor = factor as fixed_t;
+        let factor_int = factor as fixed_t;
 
         /* Fails if clock_rate exceeds maximum, relative to sample_rate */
-        let in_bounds = 0.0 <= factor - self.factor as f64 && factor - (self.factor as f64) < 1.0;
+        let in_bounds = 0.0 <= factor - factor_int as f64 && factor - (factor_int as f64) < 1.0;
         if !in_bounds { return Err("clock_rate exceeds maximum, relative to sample_rate") }
 
         self.factor = factor.ceil() as fixed_t;
