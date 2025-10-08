@@ -8,7 +8,7 @@ const SAMPLE_RATE : usize = 48000;
 
 fn main() {
     let mut blip = BlipBuf::new(SAMPLE_RATE / 10);
-    blip.set_rates(CLOCK_RATE, SAMPLE_RATE as f64);
+    blip.set_rates(CLOCK_RATE, SAMPLE_RATE as f64).unwrap();
 
     let mut time  = 0;      // number of clocks until next wave delta
     let mut delta = 10000;  // amplitude of next delta
@@ -23,14 +23,14 @@ fn main() {
         let clocks = CLOCK_RATE as i32 / 60;
         while time < clocks
         {
-            blip.add_delta( time as usize, delta );
+            blip.add_delta( time as usize, delta ).unwrap();
             delta = -delta; // square wave deltas alternate sign
             time = time + period;
         }
 
         // Add those clocks to buffer and adjust time for next frame
         time = time - clocks;
-        blip.end_frame( clocks as usize );
+        blip.end_frame( clocks as usize ).unwrap();
 
         // Read and play any output samples now available
         while blip.samples_avail() > 0
