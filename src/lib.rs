@@ -198,19 +198,14 @@ impl BlipBuf {
     }
 
     fn remove_samples(&mut self, count: usize) {
-        let remain = self.avail + BUF_EXTRA - count;
-        self.avail -= count;
+        let remain = (self.avail + BUF_EXTRA).saturating_sub(count);
+        self.avail = self.avail.saturating_sub(count);
 
         // We emulate the following:
         //    memmove( &buf [0], &buf [count], remain * sizeof buf [0] );
         //    memset( &buf [remain], 0, count * sizeof buf [0] );
-        for i in 0..self.samples.len() {
-            if i < remain {
-                self.samples[i] = self.samples[i + count];
-            } else {
-                self.samples[i] = 0;
-            }
-        }
+        self.samples.copy_within(count..count+remain, 0);
+        self.samples[remain..].fill(0);
     }
 
     /// Reads and removes at most `buf.len()` samples and writes them to `buf`. If
